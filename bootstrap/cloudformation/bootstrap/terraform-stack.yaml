@@ -1,0 +1,187 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Terraform root bootstrap (state + roles + boundaries)
+
+Resources:
+
+########################################
+# S3 Terraform State Bucket
+########################################
+
+  TerraformStateBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "terraform-state-${AWS::AccountId}-${AWS::Region}"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  TerraformStateBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TerraformStateBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+
+          # Enforce TLS
+          - Sid: EnforceTLS
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt TerraformStateBucket.Arn
+              - !Sub "${TerraformStateBucket.Arn}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+########################################
+# DynamoDB Lock Table
+########################################
+
+  TerraformLockTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "terraform-lock-${AWS::AccountId}-${AWS::Region}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: LockID
+          AttributeType: S
+      KeySchema:
+        - AttributeName: LockID
+          KeyType: HASH
+
+########################################
+# Permission Boundary
+########################################
+
+  TerraformRootPermissionBoundary:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub "terraform-root-boundary-${AWS::AccountId}"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+
+          # Allow everything by default
+          - Effect: Allow
+            Action: "*"
+            Resource: "*"
+
+          # Prevent privilege escalation
+          - Effect: Deny
+            Action:
+              - iam:CreateUser
+              - iam:DeleteUser
+              - iam:CreateAccessKey
+              - iam:AttachUserPolicy
+              - iam:PutUserPolicy
+              - iam:PutRolePolicy
+              - iam:AttachRolePolicy
+              - iam:DeleteRolePermissionsBoundary
+              - iam:PutRolePermissionsBoundary
+            Resource: "*"
+
+          # Prevent org tampering
+          - Effect: Deny
+            Action:
+              - organizations:*
+            Resource: "*"
+
+########################################
+# Shared State Access Policy
+########################################
+
+  TerraformStateAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub "terraform-state-access-${AWS::AccountId}"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+
+          - Effect: Allow
+            Action:
+              - s3:ListBucket
+            Resource: !GetAtt TerraformStateBucket.Arn
+
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+            Resource: !Sub "${TerraformStateBucket.Arn}/*"
+
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:DescribeTable
+            Resource: !GetAtt TerraformLockTable.Arn
+
+########################################
+# Terraform Root Plan Role
+########################################
+
+  TerraformRootPlanRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "terraform-root-plan-${AWS::AccountId}"
+      PermissionsBoundary: !Ref TerraformRootPermissionBoundary
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::123456789012:role/your-ci-role
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/ReadOnlyAccess
+        - !Ref TerraformStateAccessPolicy
+
+########################################
+# Terraform Root Apply Role
+########################################
+
+  TerraformRootApplyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "terraform-root-apply-${AWS::AccountId}"
+      PermissionsBoundary: !Ref TerraformRootPermissionBoundary
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::123456789012:role/your-ci-role
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+        - !Ref TerraformStateAccessPolicy
+
+########################################
+# Outputs
+########################################
+
+Outputs:
+
+  TerraformStateBucketName:
+    Value: !Ref TerraformStateBucket
+
+  TerraformLockTableName:
+    Value: !Ref TerraformLockTable
+
+  TerraformPlanRoleArn:
+    Value: !GetAtt TerraformRootPlanRole.Arn
+
+  TerraformApplyRoleArn:
+    Value: !GetAtt TerraformRootApplyRole.Arn
