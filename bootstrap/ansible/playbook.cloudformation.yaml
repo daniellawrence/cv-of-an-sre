@@ -6,7 +6,7 @@
 
   vars:
     stack_name: terraform-stack
-    region: us-east-1
+    region: ap-southeast-2
     endpoint: http://localstack:4566
     success_states:
       - CREATE_COMPLETE

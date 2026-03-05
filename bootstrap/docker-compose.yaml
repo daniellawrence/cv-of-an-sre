@@ -5,11 +5,13 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=cloudformation,s3,iam,dynamodb,sqs,sns,lambda
+      - SERVICES=cloudformation,s3,iam,dynamodb,eks,ec2,secretsmanager,ssm,sqs,sns,lambda
       - DEBUG=1
       - DOCKER_HOST=unix:///var/run/docker.sock
       - LAMBDA_EXECUTOR=docker
       - LAMBDA_DOCKER_NETWORK=cv_default
+      - EKS_PROVIDER=kind
+      - ENFORCE_IAM=1
     volumes:
       - "./localstack/init:/etc/localstack/init/ready.d"
       - "/var/run/docker.sock:/var/run/docker.sock"
@@ -20,6 +22,22 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+    networks:
+      - cv_default
+
+  kind:
+    build:
+      context: k8s/.
+      dockerfile: Dockerfile
+    container_name: kind-control
+    command: >
+      /scripts/create-cluster.sh &&
+      tail -f /dev/null
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./k8s/kind-config.yaml:/config/kind-config.yaml
+      - ./k8s/scripts:/scripts
+      - ./k8s/.kube:/root/.kube
     networks:
       - cv_default
 

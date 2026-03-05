@@ -1,6 +1,15 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Terraform root bootstrap (state + roles + boundaries)
 
+Parameters:
+  TerraformPlanUserName:
+    Type: String
+    Default: terraform-plan-user
+
+  TerraformApplyUserName:
+    Type: String
+    Default: terraform-apply-user
+
 Resources:
 
 ########################################
@@ -30,8 +39,6 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-
-          # Enforce TLS
           - Sid: EnforceTLS
             Effect: Deny
             Principal: "*"
@@ -70,13 +77,10 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-
-          # Allow everything by default
           - Effect: Allow
             Action: "*"
             Resource: "*"
 
-          # Prevent privilege escalation
           - Effect: Deny
             Action:
               - iam:CreateUser
@@ -90,7 +94,6 @@ Resources:
               - iam:PutRolePermissionsBoundary
             Resource: "*"
 
-          # Prevent org tampering
           - Effect: Deny
             Action:
               - organizations:*
@@ -107,7 +110,6 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-
           - Effect: Allow
             Action:
               - s3:ListBucket
@@ -142,14 +144,14 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: arn:aws:iam::123456789012:role/your-ci-role
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/ReadOnlyAccess
         - !Ref TerraformStateAccessPolicy
 
 ########################################
-# Terraform Root Apply Role
+# Terraform Root Apply Role (MFA enforced)
 ########################################
 
   TerraformRootApplyRole:
@@ -162,18 +164,76 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: arn:aws:iam::123456789012:role/your-ci-role
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action: sts:AssumeRole
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: true
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
         - !Ref TerraformStateAccessPolicy
+
+########################################
+# Terraform Users
+########################################
+
+  TerraformPlanUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Ref TerraformPlanUserName
+
+  TerraformApplyUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Ref TerraformApplyUserName
+
+########################################
+# Access Keys
+########################################
+
+  TerraformPlanUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref TerraformPlanUser
+
+  TerraformApplyUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref TerraformApplyUser
+
+########################################
+# Secrets Manager Storage
+########################################
+
+  TerraformPlanUserSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "terraform/bootstrap/${AWS::AccountId}/plan"
+      Description: Terraform plan user credentials
+      KmsKeyId: alias/aws/secretsmanager
+      SecretString: !Sub |
+        {
+          "access_key_id": "${TerraformPlanUserAccessKey}",
+          "secret_access_key": "${TerraformPlanUserAccessKey.SecretAccessKey}"
+        }
+
+  TerraformApplyUserSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "terraform/bootstrap/${AWS::AccountId}/apply"
+      Description: Terraform apply user credentials
+      KmsKeyId: alias/aws/secretsmanager
+      SecretString: !Sub |
+        {
+          "access_key_id": "${TerraformApplyUserAccessKey}",
+          "secret_access_key": "${TerraformApplyUserAccessKey.SecretAccessKey}"
+        }
 
 ########################################
 # Outputs
 ########################################
 
 Outputs:
-
   TerraformStateBucketName:
     Value: !Ref TerraformStateBucket
 
