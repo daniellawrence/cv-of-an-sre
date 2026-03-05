@@ -23,26 +23,11 @@ generate "provider" {
   path      = "provider.tf"
   if_exists = "overwrite"
   contents  = <<EOF
-
 provider "aws" {
-  region                      = var.region
-  access_key                  = "test"
-  secret_key                  = "test"
-  skip_credentials_validation = true
-  skip_metadata_api_check     = true
-  skip_requesting_account_id  = true
-
-  endpoints {
-    s3       = "http://localstack:4566"
-    dynamodb = "http://localstack:4566"
-    eks      = "http://localstack:4566"
-    ec2      = "http://localstack:4566"
-    iam      = "http://localstack:4566"
-    sts      = "http://localstack:4566"
-  }
+  region = "ap-southeast-2"
 }
-
 EOF
+}
 
 locals {
   aws_account_id = "000000000000"
