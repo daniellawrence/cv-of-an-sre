@@ -4,6 +4,7 @@ KUBECTL_VERSION := v1.29.0
 KIND_VERSION := v0.22.0
 TERRAGRUNT_VERSION := v0.56.0
 TERRAFORM_VERSION := v1.14.6
+ARGOCD_VERSION := v3.3.2
 
 # Hardcoded for Linux amd64
 OS := linux
@@ -21,7 +22,7 @@ help:
 	@echo "  make install-all            - Download and install all tools"
 
 .PHONY: install-all
-install-all: install-helm install-helmfile install-kubectl install-kind install-terragrunt install-terraform
+install-all: install-helm install-helmfile install-kubectl install-kind install-terragrunt install-terraform install-argocd
 	@echo "✓ All tools installed!"
 
 # Helm
@@ -87,6 +88,19 @@ bin/terraform:
 	@rm terraform.zip
 	@chmod +x bin/terraform
 	@echo "✓ Terraform installed: $$(bin/terraform version)"
+
+# argocd
+.PHONY: install-argocd
+install-argocd: bin/argocd
+bin/argocd:
+	@echo "Installing argocd $(ARGOCD_VERSION)..."
+	@mkdir -p bin/
+	@curl -sSL -o bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+	@chmod +x bin/argocd
+	@echo "✓ argocd installed: $$(./bin/argocd  version --short --client)"
+
+
+
 
 .PHONY: clean
 clean:

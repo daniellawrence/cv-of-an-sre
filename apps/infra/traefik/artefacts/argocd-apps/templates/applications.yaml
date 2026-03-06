@@ -1,0 +1,86 @@
+---
+# Source: argocd-apps/templates/applications.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    chart: traefik
+    helm:
+      releaseName: traefik
+      values: |
+        deployment:
+          replicas: 2
+    
+        service:
+          type: LoadBalancer
+    
+        ingressClass:
+          enabled: true
+          isDefaultClass: true
+    
+        ports:
+          web:
+            port: 8000
+          websecure:
+            port: 8443
+          traefik:
+            port: 9000
+            expose: false
+    
+        providers:
+          kubernetesIngress:
+            enabled: true
+          kubernetesGateway:
+            enabled: true
+    
+        gateway:
+          enabled: true
+          listeners:
+            web:
+              port: 8000
+            websecure:
+              port: 8443
+    
+        metrics:
+          prometheus: {}
+    
+        logs:
+          general:
+            level: info
+    
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+    
+        podAnnotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "9100"
+    repoURL: https://traefik.github.io/charts
+    targetRevision: 28.0.0
+  destination:
+    namespace: traefik
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+      limit: 5
+    syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=foreground
+    - RespectIgnoreDifferences=true

@@ -9,9 +9,10 @@ bin/helmfile \
     --helm-binary $GIT_ROOT/bin/helm \
     --file argocd/helmfile.yaml \
     sync
+
 ADMIN_PASSWORD=$(./scripts/kubectl.sh -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 cat << EOF
-bin/kubectl.sh port-forward service/argocd-server -n argocd 8080:443
+./scripts/kubectl.sh  port-forward service/argocd-server -n argocd 9999:443
 user:      admin
 password:  ${ADMIN_PASSWORD}
 EOF
