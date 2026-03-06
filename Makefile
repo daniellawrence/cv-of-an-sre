@@ -1,0 +1,105 @@
+# Tool versions
+HELM_VERSION := v3.14.0
+KUBECTL_VERSION := v1.29.0
+KIND_VERSION := v0.22.0
+TERRAGRUNT_VERSION := v0.56.0
+TERRAFORM_VERSION := v1.14.6
+
+# Hardcoded for Linux amd64
+OS := linux
+ARCH := amd64
+
+.PHONY: help
+help:
+	@echo "Available targets:"
+	@echo "  make install-helm           - Download and install Helm"
+	@echo "  make install-helmfile       - Download and install Helmfile"
+	@echo "  make install-kubectl        - Download and install kubectl"
+	@echo "  make install-kind           - Download and install KinD"
+	@echo "  make install-terragrunt     - Download and install Terragrunt"
+	@echo "  make install-terraform      - Download and install Terraform"
+	@echo "  make install-all            - Download and install all tools"
+
+.PHONY: install-all
+install-all: install-helm install-helmfile install-kubectl install-kind install-terragrunt install-terraform
+	@echo "✓ All tools installed!"
+
+# Helm
+.PHONY: install-helm
+install-helm: bin/helm
+bin/helm:
+	@echo "Installing Helm $(HELM_VERSION)..."
+	@mkdir -p bin/
+	@curl -fsSL -o helm.tar.gz https://get.helm.sh/helm-$(HELM_VERSION)-$(OS)-$(ARCH).tar.gz
+	@tar xzf helm.tar.gz -C bin/ --strip-components=1 $(OS)-$(ARCH)/helm
+	@rm helm.tar.gz
+	@chmod +x bin/helm
+	@echo "✓ Helm installed: $$(bin/helm version --short)"
+
+# Helmfile
+.PHONY: install-helmfile
+install-helmfile: bin/helmfile
+bin/helmfile:
+	@echo "Installing Helmfile..."
+	@mkdir -p bin/
+	@curl -fsSL -o bin/helmfile https://github.com/roboll/helmfile/releases/latest/download/helmfile_$(OS)_$(ARCH)
+	@chmod +x bin/helmfile
+	@echo "✓ Helmfile installed: $$(bin/helmfile version)"
+
+# kubectl
+.PHONY: install-kubectl
+install-kubectl: bin/kubectl
+bin/kubectl:
+	@echo "Installing kubectl $(KUBECTL_VERSION)..."
+	@mkdir -p bin/
+	@curl -fsSL -o bin/kubectl https://dl.k8s.io/release/$(KUBECTL_VERSION)/bin/$(OS)/$(ARCH)/kubectl
+	@chmod +x bin/kubectl
+	@echo "✓ kubectl installed: $$(bin/kubectl version --client --short)"
+
+# KinD
+.PHONY: install-kind
+install-kind: bin/kind
+bin/kind:
+	@echo "Installing KinD $(KIND_VERSION)..."
+	@mkdir -p bin/
+	@curl -fsSL -o bin/kind https://kind.sigs.k8s.io/dl/$(KIND_VERSION)/kind-$(OS)-$(ARCH)
+	@chmod +x bin/kind
+	@echo "✓ KinD installed: $$(bin/kind version)"
+
+# Terragrunt
+.PHONY: install-terragrunt
+install-terragrunt: bin/terragrunt
+bin/terragrunt:
+	@echo "Installing Terragrunt $(TERRAGRUNT_VERSION)..."
+	@mkdir -p bin/
+	@curl -fsSL -o bin/terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v0.99.4/terragrunt_linux_amd64
+	@chmod +x bin/terragrunt
+	@echo "✓ Terragrunt installed: $$(bin/terragrunt --version)"
+
+# Terraform
+.PHONY: install-terraform
+install-terraform: bin/terraform
+bin/terraform:
+	@echo "Installing Terraform $(TERRAFORM_VERSION)..."
+	@mkdir -p bin/
+	@curl -fsSL -o terraform.zip https://releases.hashicorp.com/terraform/$(subst v,,$(TERRAFORM_VERSION))/terraform_$(subst v,,$(TERRAFORM_VERSION))_$(OS)_$(ARCH).zip
+	@unzip -q -o terraform.zip -d bin/
+	@rm terraform.zip
+	@chmod +x bin/terraform
+	@echo "✓ Terraform installed: $$(bin/terraform version)"
+
+.PHONY: clean
+clean:
+	@echo "Removing bin/ directory..."
+	@rm -rf bin/
+	@echo "✓ Clean complete"
+
+.PHONY: check-versions
+check-versions:
+	@echo "Checking installed versions..."
+	@test -x bin/helm       && echo "Helm:       $$(bin/helm version --short)" || echo "Helm: not installed"
+	@test -x bin/helmfile   && echo "Helmfile:   $$(bin/helmfile version)" || echo "Helmfile: not installed"
+	@test -x bin/kubectl    && echo "kubectl:    $$(bin/kubectl version --client | head -1)" || echo "kubectl: not installed"
+	@test -x bin/kind       && echo "KinD:       $$(bin/kind version)" || echo "KinD: not installed"
+	@test -x bin/terragrunt && echo "Terragrunt: $$(bin/terragrunt --version | head -1)" || echo "Terragrunt: not installed"
+	@test -x bin/terraform  && echo "Terraform:  $$(bin/terraform version | head -1)" || echo "Terraform: not installed"
