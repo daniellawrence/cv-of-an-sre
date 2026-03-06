@@ -1,4 +1,0 @@
-localstack/data
-.kube
-.terraform
-.terraform.lock.hcl

@@ -1,3 +1,0 @@
-collections:
-  - name: amazon.aws
-    version: ">=11.1.0"
