@@ -12,7 +12,7 @@ bin/helmfile \
 
 ADMIN_PASSWORD=$(./scripts/kubectl.sh -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 cat << EOF
-./scripts/kubectl.sh  port-forward service/argocd-server -n argocd 9999:443
+./scripts/kubectl.sh port-forward service/argocd-server -n argocd 9999:443
 user:      admin
 password:  ${ADMIN_PASSWORD}
 EOF

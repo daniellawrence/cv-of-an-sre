@@ -18,11 +18,8 @@ spec:
           replicas: 2
     
         service:
-          type: LoadBalancer
-    
-        ingressClass:
           enabled: true
-          isDefaultClass: true
+          type: LoadBalancer
     
         ports:
           web:
@@ -31,7 +28,23 @@ spec:
             port: 8443
           traefik:
             port: 9000
-            expose: false
+    
+        ingressClass:
+          enabled: true
+          isDefaultClass: true
+    
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values:
+                          - traefik
+                  topologyKey: kubernetes.io/hostname
     
         providers:
           kubernetesIngress:
@@ -39,20 +52,8 @@ spec:
           kubernetesGateway:
             enabled: true
     
-        gateway:
-          enabled: true
-          listeners:
-            web:
-              port: 8000
-            websecure:
-              port: 8443
-    
         metrics:
           prometheus: {}
-    
-        logs:
-          general:
-            level: info
     
         resources:
           requests:

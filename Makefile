@@ -22,7 +22,7 @@ help:
 	@echo "  make install-all            - Download and install all tools"
 
 .PHONY: install-all
-install-all: install-helm install-helmfile install-kubectl install-kind install-terragrunt install-terraform install-argocd
+install-all: install-helm install-helmfile install-kubectl install-kind install-terragrunt install-terraform install-argocd install-cloud-provider-kind
 	@echo "✓ All tools installed!"
 
 # Helm
@@ -66,6 +66,16 @@ bin/kind:
 	@curl -fsSL -o bin/kind https://kind.sigs.k8s.io/dl/$(KIND_VERSION)/kind-$(OS)-$(ARCH)
 	@chmod +x bin/kind
 	@echo "✓ KinD installed: $$(bin/kind version)"
+
+# Cloud Provider KinD
+.PHONY: install-cloud-provider-kind
+install-cloud-provider-kind: bin/cloud-provider-kind
+bin/cloud-provider-kind:
+	@echo "Installing cloud-provider-kind $(CLOUD_PROVIDER_KIND_VERSION)..."
+	@mkdir -p bin/
+	@curl -fsSL https://github.com/kubernetes-sigs/cloud-provider-kind/releases/download/v0.10.0/cloud-provider-kind_0.10.0_linux_amd64.tar.gz | tar xz -C bin/
+	@chmod +x bin/cloud-provider-kind
+	@echo "✓ cloud-provider-kind installed: $$(bin/cloud-provider-kind version 2>/dev/null || echo 'ready')"
 
 # Terragrunt
 .PHONY: install-terragrunt
