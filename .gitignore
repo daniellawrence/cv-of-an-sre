@@ -3,3 +3,4 @@
 .terragrunt-cache
 .kube
 bin
+kubeconfig.yaml
