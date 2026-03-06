@@ -33,6 +33,8 @@ ansible-image:
 .PHONY: localstack
 localstack:
 	docker-compose up -d
+	docker network connect cv_default local-control-plane 2>/dev/null || true
+	docker network connect cv_default local-worker 2>/dev/null || true
 
 .PHONY: localstack-reset
 localstack-reset:
@@ -50,11 +52,5 @@ ansible-deploy-verbose: localstack ansible-image
 check:
 	./scripts/check.sh
 
-tf-init: ansible-deploy
-	$(TG) terraform init -upgrade
+up: ansible-deploy
 
-tf-plan: tf-init
-	$(TG) terraform plan
-
-tf-apply: tf-init
-	$(TG) terragrunt apply -auto-approve

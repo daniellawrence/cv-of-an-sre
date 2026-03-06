@@ -31,8 +31,7 @@ services:
       dockerfile: Dockerfile
     container_name: kind-control
     command: >
-      /scripts/create-cluster.sh &&
-      tail -f /dev/null
+      /scripts/create-cluster.sh
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./k8s/kind-config.yaml:/config/kind-config.yaml
