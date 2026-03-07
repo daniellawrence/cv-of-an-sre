@@ -31,3 +31,16 @@ deploy traefik as a better solution then port-fowarding
 ```sh
 scripts/2_traefik.sh
 ```
+
+- [traefik.localhost](http://traefik.localhost:8080/)
+- [argocd.localhost](hthttp://argocd.localhost:8080/)
+
+## 3
+
+deploy gitea as a git-server, pre-work for CI
+
+```sh
+scripts/3_gitea.sh
+```
+
+- [git.localhost](hthttp://git.localhost:8080/)
