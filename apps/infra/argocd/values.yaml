@@ -6,6 +6,18 @@ controller:
 
 server:
   replicas: 2
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - argocd.localhost
+    paths:
+      - /
+    pathType: Prefix
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: web
 
 repoServer:
   replicas: 2
