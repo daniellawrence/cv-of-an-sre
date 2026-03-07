@@ -6,21 +6,16 @@ controller:
 
 server:
   replicas: 2
-  service:
-    type: ClusterIP
-  ingress:
-    enabled: true
-    ingressClassName: traefik
-    hosts:
-      - argocd.localhost
-    paths:
-      - /
-    pathType: Prefix
-    annotations:
-      traefik.ingress.kubernetes.io/router.entrypoints: web
+  insecure: true
+  extraArgs:
+    - --insecure
 
 repoServer:
   replicas: 2
 
 applicationSet:
   replicas: 2
+
+configs:
+  params:
+    server.insecure: "true"

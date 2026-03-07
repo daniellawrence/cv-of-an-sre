@@ -25,7 +25,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/cmd-params: 56a4596d88ac0b6a2482ddc1399cdb1c31e0ebed250c0c02f427505e6de222c5
+        checksum/cmd-params: 75a98b8389c7604b93404001ea855d646648f76a6721e580d1119309955a6ee3
       labels:
         helm.sh/chart: argo-cd-9.4.7
         app.kubernetes.io/name: argocd-notifications-controller

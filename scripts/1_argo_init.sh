@@ -7,7 +7,7 @@ bin/helmfile \
     template --output-dir-template artefacts
 bin/helmfile \
     --helm-binary $GIT_ROOT/bin/helm \
-    --file apps/infra/helmfile.yaml \
+    --file apps/infra/argocd/helmfile.yaml \
     sync
 
 ADMIN_PASSWORD=$(./scripts/kubectl.sh -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
