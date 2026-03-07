@@ -26,9 +26,8 @@ scripts/1_argo_init.sh
 
 ## 2
 
-deploy nginx-ingress as a better solution then port-fowarding
+deploy traefik as a better solution then port-fowarding
 
 ```sh
-scripts/2_k8s_ingress.sh
+scripts/2_traefik.sh
 ```
-

@@ -1,135 +1,40 @@
-helmDefaults:
-  atomic: true
-  cleanupOnFail: true
-  wait: true
-  timeout: 600
-  recreatePods: false
-  force: false
-
 repositories:
   - name: argo
     url: https://argoproj.github.io/argo-helm
 
 releases:
-  - name: gateway-api-crds-app
+  - name: traefik-app
     namespace: argocd
-    createNamespace: true
     chart: argo/argocd-apps
-    version: "1.6.0"
+    version: 2.0.4
     values:
       - applications:
-        - name: gateway-api-crds
-          namespace: argocd
-          additionalLabels: {}
-          additionalAnnotations: {}
-          project: default
-          source:
-            repoURL: https://github.com/kubernetes-sigs/gateway-api
-            path: config/crd/standard
-            targetRevision: v1.4.0
-          destination:
-            server: https://kubernetes.default.svc
-            namespace: ""
-          syncPolicy:
-            automated:
-              prune: false
-              selfHeal: false
-            syncOptions:
-              - ServerSideApply=true
-            retry:
-              limit: 3
-              backoff:
-                duration: 5s
-                factor: 2
-                maxDuration: 3m
-  
-  - name: traefik-gateway-app
-    namespace: argocd
-    createNamespace: true
-    chart: argo/argocd-apps
-    version: "1.6.0"
-    values:
-      - applications:
-        - name: traefik
-          namespace: argocd
-          additionalLabels: {}
-          additionalAnnotations: {}
-          finalizers:
-            - resources-finalizer.argocd.argoproj.io
-          project: default
-          source:
-            repoURL: https://traefik.github.io/charts
-            chart: traefik
-            targetRevision: "28.0.0"
-            helm:
-              releaseName: traefik
-              values: |
-                deployment:
-                  replicas: 2
-                
-                service:
-                  enabled: true
-                  type: LoadBalancer
-                
-                ports:
-                  web:
-                    port: 8000
-                  websecure:
-                    port: 8443
-                  traefik:
-                    port: 9000
-                
-                ingressClass:
-                  enabled: true
-                  isDefaultClass: true
-           
-                affinity:
-                  podAntiAffinity:
-                    preferredDuringSchedulingIgnoredDuringExecution:
-                      - weight: 100
-                        podAffinityTerm:
-                          labelSelector:
-                            matchExpressions:
-                              - key: app.kubernetes.io/name
-                                operator: In
-                                values:
-                                  - traefik
-                          topologyKey: kubernetes.io/hostname
-                
-                providers:
-                  kubernetesIngress:
-                    enabled: true
-                  kubernetesGateway:
-                    enabled: true
-                
-                metrics:
-                  prometheus: {}
-                
-                resources:
-                  requests:
-                    cpu: 100m
-                    memory: 128Mi
-                  limits:
-                    cpu: 500m
-                    memory: 512Mi
-                
-                podAnnotations:
-                  prometheus.io/scrape: "true"
-                  prometheus.io/port: "9100"
-          destination:
-            server: https://kubernetes.default.svc
-            namespace: traefik
-          syncPolicy:
-            automated:
-              prune: true
-              selfHeal: true
-            syncOptions:
-              - CreateNamespace=true
-              - PrunePropagationPolicy=foreground
-              - RespectIgnoreDifferences=true
-            retry:
-              limit: 5
-              backoff:
-                duration: 5s
-                factor: 2
-                maxDuration: 3m
+          traefik:
+            project: default
+            source:
+              repoURL: https://traefik.github.io/charts
+              chart: traefik
+              targetRevision: "*"
+              helm:
+                values: |
+                  ingressRoute:
+                    dashboard:
+                      enabled: true
+                      matchRule: Host(`dashboard.localhost`)
+                      entryPoints:
+                        - web
+                  providers:
+                    kubernetesGateway:
+                      enabled: true
+                  gateway:
+                    listeners:
+                      web:
+                        namespacePolicy:
+                          from: All
+            destination:
+              name: in-cluster
+              namespace: kube-system
+            syncPolicy:
+              automated:
+                prune: true
+                selfHeal: true

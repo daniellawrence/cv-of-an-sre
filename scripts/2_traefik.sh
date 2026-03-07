@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# - nginx-ingress was removed
-#   - ./scripts/kubectl.sh delete applications.argoproj.io -n argocd nginx-ingress
 source $(dirname $0)/lib.sh
 cd $GIT_ROOT
 bin/helmfile \
@@ -13,4 +11,5 @@ bin/helmfile \
     --file apps/infra/traefik \
     sync
 
-./scripts/kubectl.sh get applications.argoproj.io -n argocd traefik
+curl -vso /dev/null -H host:dashboard.localhost http://localhost:8080/dashboard/
+
