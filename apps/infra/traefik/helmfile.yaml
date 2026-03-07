@@ -1,6 +1,8 @@
 repositories:
   - name: argo
     url: https://argoproj.github.io/argo-helm
+  - name: incubator
+    url: https://charts.helm.sh/incubator
 
 releases:
   - name: traefik-app
@@ -20,7 +22,7 @@ releases:
                   ingressRoute:
                     dashboard:
                       enabled: true
-                      matchRule: Host(`dashboard.localhost`)
+                      matchRule: Host(`traefik.localhost`)
                       entryPoints:
                         - web
                   providers:
@@ -38,3 +40,24 @@ releases:
               automated:
                 prune: true
                 selfHeal: true
+              syncOptions:
+                - CreateNamespace=true
+  - name: argocd-server-ingress-route
+    chart: incubator/raw
+    values:
+    - resources:
+      - apiVersion: traefik.io/v1alpha1
+        kind: IngressRoute
+        metadata:
+          name: argocd-server
+          namespace: argocd
+        spec:
+          entryPoints:
+            - web
+          routes:
+            - kind: Rule
+              match: Host(`argocd.localhost`)
+              priority: 10
+              services:
+                - name: argocd-server
+                  port: 80
