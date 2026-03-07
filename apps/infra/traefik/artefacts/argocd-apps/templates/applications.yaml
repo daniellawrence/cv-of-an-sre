@@ -3,6 +3,45 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
+  name: argocd-ingress
+spec:
+  project: default
+  source:
+    chart: raw
+    helm:
+      values: |
+        resources:
+        - apiVersion: traefik.io/v1alpha1
+          kind: IngressRoute
+          metadata:
+            name: argocd-server
+            namespace: argocd
+          spec:
+            entryPoints:
+              - web
+            routes:
+              - kind: Rule
+                match: Host(`argocd.localhost`)
+                priority: 10
+                services:
+                  - name: argocd-server
+                    port: 80
+    repoURL: https://charts.helm.sh/incubator
+    targetRevision: '*'
+  destination:
+    name: in-cluster
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+---
+# Source: argocd-apps/templates/applications.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
   name: traefik
 spec:
   project: default

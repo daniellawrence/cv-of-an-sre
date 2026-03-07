@@ -42,22 +42,37 @@ releases:
                 selfHeal: true
               syncOptions:
                 - CreateNamespace=true
-  - name: argocd-server-ingress-route
-    chart: incubator/raw
-    values:
-    - resources:
-      - apiVersion: traefik.io/v1alpha1
-        kind: IngressRoute
-        metadata:
-          name: argocd-server
-          namespace: argocd
-        spec:
-          entryPoints:
-            - web
-          routes:
-            - kind: Rule
-              match: Host(`argocd.localhost`)
-              priority: 10
-              services:
-                - name: argocd-server
-                  port: 80
+      - applications:
+          argocd-ingress:
+            project: default
+            source:
+              repoURL: https://charts.helm.sh/incubator
+              chart: raw
+              targetRevision: "*"
+              helm:
+                values: |
+                  resources:
+                  - apiVersion: traefik.io/v1alpha1
+                    kind: IngressRoute
+                    metadata:
+                      name: argocd-server
+                      namespace: argocd
+                    spec:
+                      entryPoints:
+                        - web
+                      routes:
+                        - kind: Rule
+                          match: Host(`argocd.localhost`)
+                          priority: 10
+                          services:
+                            - name: argocd-server
+                              port: 80
+            destination:
+              name: in-cluster
+              namespace: argocd
+            syncPolicy:
+              automated:
+                prune: true
+                selfHeal: true
+              syncOptions:
+                - CreateNamespace=true
