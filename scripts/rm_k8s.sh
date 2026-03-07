@@ -13,4 +13,4 @@ fi
 
 source $(dirname $0)/lib.sh
 cd $GIT_ROOT
-bin/kind delete cluster --kubeconfig k8s/kubeconfig.yaml
+./bin/k3d cluster delete k0

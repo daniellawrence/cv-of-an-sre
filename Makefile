@@ -2,6 +2,7 @@
 HELM_VERSION := v3.14.0
 KUBECTL_VERSION := v1.29.0
 KIND_VERSION := v0.22.0
+K3D_VERSION := v5.8.3
 TERRAGRUNT_VERSION := v0.56.0
 TERRAFORM_VERSION := v1.14.6
 ARGOCD_VERSION := v3.3.2
@@ -22,7 +23,7 @@ help:
 	@echo "  make install-all            - Download and install all tools"
 
 .PHONY: install-all
-install-all: install-helm install-helmfile install-kubectl install-kind install-terragrunt install-terraform install-argocd install-cloud-provider-kind
+install-all: install-helm install-helmfile install-kubectl install-kind install-terragrunt install-terraform install-argocd install-cloud-provider-kind install-k3d
 	@echo "✓ All tools installed!"
 
 # Helm
@@ -56,6 +57,18 @@ bin/kubectl:
 	@curl -fsSL -o bin/kubectl https://dl.k8s.io/release/$(KUBECTL_VERSION)/bin/$(OS)/$(ARCH)/kubectl
 	@chmod +x bin/kubectl
 	@echo "✓ kubectl installed: $$(bin/kubectl version --client --short)"
+
+
+
+# k3d
+.PHONY: install-k3d
+install-kind: bin/k3d
+bin/k3d:
+	@echo "Installing k3d $(K3D_VERSION)..."
+	@mkdir -p bin/
+	@curl -fsSL -o bin/k3d https://github.com/k3d-io/k3d/releases/download/v5.9.0-rc.0/k3d-linux-amd64
+	@chmod +x bin/k3d
+	@echo "✓ k3d installed: $$(bin/k3d version)"
 
 # KinD
 .PHONY: install-kind
