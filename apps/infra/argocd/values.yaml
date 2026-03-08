@@ -19,3 +19,8 @@ applicationSet:
 configs:
   params:
     server.insecure: "true"
+
+argocd:
+  configs:
+    secret:
+      adminPassword: "password"

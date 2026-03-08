@@ -1,0 +1,99 @@
+# https://docs.gitlab.com/charts/installation/deployment/
+repositories:
+  - name: argo
+    url: https://argoproj.github.io/argo-helm
+
+releases:
+  - name: gitlab
+    namespace: argocd
+    chart: argo/argocd-apps
+    version: 2.0.4
+    values:
+      - applications:
+          gitlab:
+            project: default
+            source:
+              repoURL: https://charts.gitlab.io/
+              chart: gitlab
+              targetRevision: "*"
+              helm:
+                values: |
+                  upgradeCheck:
+                    enabled: false
+                  global:
+                    edition: ce
+                    hosts:
+                      domain: scm.localhost
+                      https: false
+                    url: http://gitlab.scm.localhost:80
+                  ingress:
+                    enabled: false
+                  certmanager-issuer:
+                    enabled: false
+                    email: "x@x.com"
+                  certmanager:
+                    installCRDs: false
+                  installCertmanager: false
+                  gatewayApi:
+                    enabled: true
+                  gitlab-runner:
+                    enabled: true
+                    gitlabUrl: http://gitlab-webservice-default.gitlab.svc.cluster.local:8080
+                  promtheus:
+                    install: false
+                  nginx-ingress:
+                    enabled: false
+            destination:
+              name: in-cluster
+              namespace: gitlab
+            syncPolicy:
+              automated:
+                prune: true
+                selfHeal: true
+              syncOptions:
+                - CreateNamespace=true
+      - applications:
+          gitlab-ingress:
+            project: default
+            source:
+              repoURL: https://charts.helm.sh/incubator
+              chart: raw
+              targetRevision: "*"
+              helm:
+                values: |
+                  resources:
+                    - apiVersion: traefik.io/v1alpha1
+                      kind: Middleware
+                      metadata:
+                        name: gitlab-assets-passthrough
+                        namespace: gitlab
+                      spec:
+                        headers:
+                          customResponseHeaders:
+                            X-Content-Type-Options: ""
+                    - apiVersion: traefik.io/v1alpha1
+                      kind: IngressRoute
+                      metadata:
+                        name: gitlab
+                        namespace: gitlab
+                      spec:
+                        entryPoints:
+                          - web
+                        routes:
+                          - kind: Rule
+                            match: Host(`gitlab.scm.localhost`)
+                            priority: 10
+                            middlewares:
+                              - name: gitlab-assets-passthrough
+                            services:
+                              - name: gitlab-webservice-default
+                                port: 8181
+            destination:
+              name: in-cluster
+              namespace: gitlab
+            syncPolicy:
+              automated:
+                prune: true
+                selfHeal: true
+              syncOptions:
+                - CreateNamespace=true

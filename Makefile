@@ -6,6 +6,7 @@ K3D_VERSION := v5.8.3
 TERRAGRUNT_VERSION := v0.56.0
 TERRAFORM_VERSION := v1.14.6
 ARGOCD_VERSION := v3.3.2
+GITLAB_CLI := 1.89.0
 
 # Hardcoded for Linux amd64
 OS := linux
@@ -23,7 +24,7 @@ help:
 	@echo "  make install-all            - Download and install all tools"
 
 .PHONY: install-all
-install-all: install-helm install-helmfile install-kubectl install-kind install-terragrunt install-terraform install-argocd install-cloud-provider-kind install-k3d
+install-all: install-helm install-helmfile install-kubectl install-kind install-terragrunt install-terraform install-argocd install-cloud-provider-kind install-k3d install-glab
 	@echo "✓ All tools installed!"
 
 # Helm
@@ -121,6 +122,20 @@ bin/argocd:
 	@curl -sSL -o bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 	@chmod +x bin/argocd
 	@echo "✓ argocd installed: $$(./bin/argocd  version --short --client)"
+
+# argocd
+.PHONY: install-glab
+install-glab: bin/glab
+bin/glab:
+	@echo "Installing glab $(GITLAB_CLI)..."
+	@mkdir -p bin/
+	@curl -sSL -o glab.tar.gz https://gitlab.com/gitlab-org/cli/-/releases/v1.89.0/downloads/glab_1.89.0_linux_amd64.tar.gz
+	@tar xzf glab.tar.gz -C bin/ --strip-components=1 
+	@rm glab.tar.gz
+	@chmod +x bin/glab
+	@echo "✓ glab installed: $(./bin/glab  --version)"
+
+
 
 
 

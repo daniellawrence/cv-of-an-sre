@@ -12,5 +12,5 @@ bin/helmfile \
     sync
 
 # curl -vso /dev/null -H host:dashboard.localhost http://localhost:8080/dashboard/
-curl -vso /dev/null http://traefik.localhost:8080/dashboard/
+curl -vso /dev/null http://traefik.localhost/dashboard/
 
