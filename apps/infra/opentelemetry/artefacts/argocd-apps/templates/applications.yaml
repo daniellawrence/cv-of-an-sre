@@ -1,0 +1,50 @@
+---
+# Source: argocd-apps/templates/applications.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opentelemetry
+spec:
+  project: default
+  source:
+    chart: opentelemetry-kube-stack
+    helm:
+      values: |
+        opentelemetry-operator:
+          admissionWebhooks:
+            certManager:
+              enabled: false
+            autoGenerateCert:
+              enabled: true
+        collectors:
+          daemon:
+            # disable Prometheus scrapping
+            presets:
+              logsCollection:
+                enabled: true
+              kubeletMetrics:
+                enabled: true
+              hostMetrics:
+                enabled: true
+              kubernetesAttributes:
+                enabled: true
+              kubernetesEvents:
+                enabled: true
+              clusterMetrics:
+                enabled: true
+              annotationDiscovery:
+                logs:
+                  enabled: true
+                metrics:
+                  enabled: true
+    repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+    targetRevision: '*'
+  destination:
+    name: in-cluster
+    namespace: opentelemetry
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
